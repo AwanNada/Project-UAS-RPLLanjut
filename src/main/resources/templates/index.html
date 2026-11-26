@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>AI Film Recommender</title>
+	<style>
+		:root { color-scheme: light; font-family: system-ui, sans-serif; color: #24292f; background: #f6f8fa; }
+		body { max-width: 860px; margin: 0 auto; padding: 2rem 1rem; }
+		header, section, form { background: #fff; border: 1px solid #d0d7de; border-radius: 10px; padding: 1.25rem; margin-bottom: 1rem; }
+		h1, h2, h3 { margin-top: 0; }
+		label { display: block; font-weight: 600; margin: 1rem 0 .35rem; }
+		select, textarea { box-sizing: border-box; width: 100%; padding: .65rem; border: 1px solid #8c959f; border-radius: 6px; font: inherit; }
+		button { margin-top: 1rem; padding: .65rem 1rem; border: 0; border-radius: 6px; color: white; background: #0969da; font: inherit; cursor: pointer; }
+		.error { color: #b42318; }
+		.film { border-top: 1px solid #d8dee4; padding-top: 1rem; margin-top: 1rem; }
+		.muted { color: #57606a; }
+	</style>
+</head>
+<body>
+<header>
+	<h1>AI Film Recommender</h1>
+	<p class="muted">Choose a genre and describe what you want to watch. Suggestions come only from the curated film catalog.</p>
+</header>
+
+<main>
+	<form th:action="@{/recommendations}" th:object="${recommendationForm}" method="post">
+		<h2>Find a film</h2>
+		<label for="genre">Genre</label>
+		<select id="genre" th:field="*{genre}" required>
+			<option value="">Choose a genre</option>
+			<option th:each="genre : ${genres}" th:value="${genre}" th:text="${genre}">Mystery</option>
+		</select>
+		<p class="error" role="alert" th:if="${#fields.hasErrors('genre')}" th:errors="*{genre}">Choose a genre.</p>
+
+		<label for="preferences">What kind of film are you in the mood for?</label>
+		<textarea id="preferences" th:field="*{preferences}" rows="4" maxlength="300" required
+				placeholder="For example: a clever mystery with a light tone"></textarea>
+		<p class="error" role="alert" th:if="${#fields.hasErrors('preferences')}" th:errors="*{preferences}">Enter your preference.</p>
+		<p class="muted">Maximum 300 characters.</p>
+
+		<button type="submit">Recommend films</button>
+	</form>
+
+	<section th:if="${recommendationOutcome != null}" aria-live="polite">
+		<div th:if="${recommendationOutcome.status.name() == 'SUCCESS'}">
+			<h2>Your recommendations</h2>
+			<article class="film" th:each="film : ${recommendationOutcome.recommendations}">
+				<h3 th:text="${film.title}">Film title</h3>
+				<p class="muted"><span th:text="${film.releaseYear}">2020</span> · <span th:text="${film.genre}">Mystery</span></p>
+				<p th:text="${film.reason}">Why this film matches.</p>
+			</article>
+		</div>
+		<p th:if="${recommendationOutcome.status.name() == 'NO_RESULTS'}" th:text="${recommendationOutcome.message}">No matching films were found.</p>
+		<p class="error" th:if="${recommendationOutcome.status.name() == 'ERROR'}" th:text="${recommendationOutcome.message}">Recommendations are temporarily unavailable.</p>
+	</section>
+
+	<section>
+		<h2>Recommendation history</h2>
+		<p class="muted" th:if="${#lists.isEmpty(history)}">Your saved recommendations will appear here.</p>
+		<article class="film" th:each="request : ${history}">
+			<h3 th:text="${request.genre}">Genre</h3>
+			<p th:text="${request.preferences}">Preference</p>
+			<p class="muted" th:text="${request.createdAt}">Requested at</p>
+			<ul>
+				<li th:each="item : ${request.items}">
+					<strong th:text="${item.movie.title}">Film title</strong>
+					<span>(<span th:text="${item.movie.releaseYear}">2020</span>)</span>
+					<span th:text="${item.reason}">Reason</span>
+				</li>
+			</ul>
+		</article>
+	</section>
+</main>
+</body>
+</html>

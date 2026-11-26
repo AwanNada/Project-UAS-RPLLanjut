@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 public record RecommendationForm(
-		@NotBlank @Size(max = 80) String genre,
-		@NotBlank @Size(max = 300) String preferences) {
+		@NotBlank(message = "Choose a genre.") @Size(max = 80) String genre,
+		@NotBlank(message = "Enter your preference.") @Size(max = 300, message = "Use at most 300 characters.")
+		String preferences) {
 }
