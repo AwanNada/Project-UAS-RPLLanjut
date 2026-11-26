@@ -1,89 +1,98 @@
-# 5W1H and Experiment Report
+# Laporan Eksperimen
 
-## 5W1H
+## Gambaran 5W1H
 
-### Who
+### Siapa
 
-The intended user is a person choosing a film for a casual watch, and the application is a standalone software-engineering course demo. It has no accounts or user-specific profiles.
+Pengguna aplikasi adalah orang yang sedang mencari film untuk ditonton. Aplikasi ini dibuat sebagai proyek UAS Rekayasa Perangkat Lunak Lanjut, bukan sebagai layanan rekomendasi produksi. Aplikasi tidak menyimpan akun atau profil pribadi.
 
-### What
+### Apa
 
-The user chooses a genre and writes a preference of up to 300 characters. Spring AI asks a local Ollama model to select up to three films from the matching catalog entries and provide a short reason for each. The app displays the results and keeps successful requests in a history list.
+Pengguna memilih genre dan menuliskan preferensi dengan panjang maksimal 300 karakter. Spring AI meminta model Ollama lokal memilih paling banyak tiga film dari katalog yang cocok, lalu memberi alasan singkat. Aplikasi menampilkan hasil dan menyimpan permintaan yang berhasil ke riwayat.
 
-### Where
+### Di mana
 
-The browser UI is served locally by Spring Boot at `http://localhost:8080`. Ollama is expected at its local default endpoint. H2 stores runtime data in `data/film-recommender.mv.db`; tests use an isolated in-memory database.
+Aplikasi berjalan secara lokal melalui Spring Boot. Alamat bawaan adalah `http://localhost:8080`; jika port tersebut sedang dipakai, aplikasi dapat dijalankan di port lain, misalnya `18080`. Ollama menggunakan endpoint lokal bawaannya. Data aplikasi tersimpan di `data/film-recommender.mv.db`, sedangkan tes memakai H2 dalam memori.
 
-### When
+### Kapan
 
-This is a local demonstration and experiment, not a production recommendation service. History is recorded when a valid recommendation response is returned; empty candidate sets and provider/response failures do not create history entries.
+Eksperimen dilakukan pada 27 November 2026 di Windows. Riwayat dibuat hanya jika aplikasi menerima pilihan yang valid. Katalog kosong, jawaban model yang tidak valid, dan kegagalan penyedia tidak menghasilkan entri riwayat.
 
-### Why
+### Mengapa
 
-The experiment demonstrates an AI-assisted selection flow while keeping the result space constrained to a known catalog. The model supplies ranking and explanation, not movie facts or arbitrary titles.
+Eksperimen ini menguji penggunaan model bahasa untuk membantu memilih film, dengan ruang pilihan yang tetap dibatasi katalog. Model memberi pilihan dan alasan; katalog tetap menjadi sumber judul, genre, tahun, dan sinopsis yang boleh direkomendasikan.
 
-### How
+### Bagaimana
 
-1. The browser submits genre and preference text.
-2. Server-side validation rejects blank fields and preferences longer than 300 characters before the model boundary.
-3. The service loads candidates for the selected genre. If none exist, it returns a no-results outcome without calling Ollama or saving a request.
-4. Spring AI sends only those candidates and the preference to Ollama and requests structured movie IDs and reasons.
-5. The service rejects malformed, unknown, duplicate, or over-three selections before persistence.
-6. Successful selections are saved as a request and ranked items, then shown with the saved history.
+1. Pengguna mengirim genre dan preferensi dari formulir browser.
+2. Aplikasi menolak genre kosong, preferensi kosong, atau preferensi yang lebih dari 300 karakter sebelum memanggil model.
+3. Aplikasi mencari film yang genrenya sesuai. Jika tidak ada kandidat, aplikasi menampilkan pesan bahwa film tidak ditemukan dan tidak menyimpan permintaan.
+4. Spring AI mengirim preferensi serta kandidat yang ditemukan ke Ollama, lalu meminta jawaban terstruktur berisi ID film dan alasan.
+5. Aplikasi memeriksa bahwa jawaban terbaca, setiap ID berasal dari kandidat, tidak ada ID duplikat, jumlah hasil paling banyak tiga, dan setiap alasan valid.
+6. Pilihan yang lolos pemeriksaan disimpan sebagai permintaan dan item berperingkat, lalu ditampilkan bersama riwayat.
 
-## Experiment log
+## Catatan pelaksanaan
 
-**Run date:** 2026-11-27
+**Tanggal pemeriksaan:** 27 November 2026
 
-**Environment:** Windows; tests ran on Java 26.0.2 with compiler target Java 17; a Java 17 runtime was not available for a separate runtime check. Spring Boot 4.1.0; Spring AI 2.0.0; H2 2.4.240. Maven Wrapper was used.
+**Lingkungan:** Windows. Tes dijalankan dengan Java 26.0.2; target kompilasi proyek adalah Java 17. Runtime Java 17 tidak tersedia untuk pemeriksaan terpisah. Versi lain yang digunakan: Spring Boot 4.1.0, Spring AI 2.0.0, dan H2 2.4.240. Perintah build dijalankan melalui Maven Wrapper.
 
-| Check | Result |
+| Pemeriksaan | Hasil |
 | --- | --- |
-| Ollama availability (`ollama --version`) | Not installed. No Ollama installation or model download was attempted. |
-| Deterministic MVC tests | Passed: home form, required and oversized input, invalid-input short-circuit, PRG success/history, no results, and visible provider errors. |
-| Recommendation service tests | Passed: empty candidates, malformed response, unknown/duplicate IDs, over-three selections, and provider failure; unsuccessful outcomes save no request. |
-| File-backed database restart | Passed: a dedicated test closes and reopens the Spring application context against the same temporary H2 file and reloads the request and ranked item. |
-| Local HTTP smoke check | Passed: the app returned HTTP 200 on port 18080; the response contained the home page, genre options, and 300-character input limit. Port 8080 was already occupied in this environment, so the smoke check used an alternate port. |
-| Live model recommendation | Not run: Ollama was unavailable. No AI-generated recommendation or model-quality claim is reported. |
-| Screenshot of model output | Not available because no model output was generated. |
+| Ollama sebelum instalasi | Pada pemeriksaan awal, perintah `ollama` belum tersedia. Ollama tidak dipasang oleh proses pengembangan ini. |
+| Ollama setelah dipasang pengguna | `ollama --version` menampilkan 0.40.18. `ollama list` menampilkan `llama3.2:latest`, berukuran 2,0 GB. Pengguna juga melaporkan proses `ollama pull llama3.2` selesai dengan status `success`. |
+| Tes otomatis | Lulus 20/20: tes konteks aplikasi, katalog, layanan rekomendasi, adapter Spring AI, alur MVC, dan persistensi. Klien model pada tes memakai stub; hasil ini bukan hasil dari Ollama. |
+| Persistensi H2 file | Lulus. Tes membuat permintaan beserta itemnya, menutup konteks aplikasi, membuka konteks baru pada file H2 yang sama, lalu memuat kembali data tersebut. |
+| Pemeriksaan halaman melalui HTTP | Lulus. Halaman utama mengembalikan HTTP 200 di port 18080 dan memuat judul aplikasi, pilihan genre, serta batas 300 karakter. Port 8080 sedang digunakan di lingkungan pemeriksaan tersebut. |
+| Uji rekomendasi langsung | Pengguna melaporkan aplikasi berhasil digunakan setelah memasang model. Namun, judul dan alasan dari hasil model tidak tersimpan sebagai catatan yang dapat diperiksa ulang. Karena itu laporan ini tidak mengutip hasil atau menilai kualitas rekomendasinya. |
+| Screenshot hasil rekomendasi | Belum tersedia. Screenshot yang tercatat hanya menampilkan formulir, bukan kartu hasil model. |
 
-### Observed output
+### Bukti uji otomatis
 
-The live smoke check confirmed an HTTP 200 home page with the title “AI Film Recommender”, a genre selector, a preference field limited to 300 characters, and the history area. The actual AI recommendation output remains unobserved; the test suite uses a deterministic stub and is not presented as model output.
-
-### Edge-case checks
-
-These were exercised by deterministic tests, not by live model calls or manual browser submissions:
-
-| Case | Verified behavior |
-| --- | --- |
-| Preference exceeds 300 characters | Validation error is shown; the selector is not called and no request is saved. |
-| Genre has no catalog candidates | Returns no results; the selector is not called and no request is saved. |
-| Unknown film ID | Rejected; no request is saved. |
-| Duplicate film IDs | Rejected; no request is saved. |
-| More than three selections | Rejected; no request is saved. |
-| File-backed database restart | Request and ranked item reload after closing and reopening the application context. |
-
-### Reproducible checks
-
-Run the deterministic suite with:
+Jalankan seluruh tes dari terminal PowerShell pada folder proyek:
 
 ```powershell
 .\mvnw.cmd test
 ```
 
-To try the model experiment on a machine with Ollama:
+Tes yang memeriksa batas dan kegagalan menggunakan pemilih film tiruan agar dapat dijalankan tanpa koneksi ke Ollama:
+
+| Kasus | Hasil yang diperiksa |
+| --- | --- |
+| Preferensi lebih dari 300 karakter | Formulir menampilkan kesalahan; pemilih model tidak dipanggil dan permintaan tidak disimpan. |
+| Genre tidak memiliki film di katalog | Aplikasi menyatakan tidak ada hasil; pemilih model tidak dipanggil dan permintaan tidak disimpan. |
+| Model mengembalikan ID film yang tidak dikenal | Pilihan ditolak dan permintaan tidak disimpan. |
+| Model mengembalikan ID yang sama lebih dari sekali | Pilihan ditolak dan permintaan tidak disimpan. |
+| Model mengembalikan lebih dari tiga film | Pilihan ditolak dan permintaan tidak disimpan. |
+| Database file dibuka ulang | Permintaan dan item berperingkat dapat dimuat kembali setelah konteks aplikasi dibuka ulang. |
+
+Tes otomatis tersebut memverifikasi perilaku aplikasi. Tes itu tidak mengukur mutu jawaban, waktu respons, atau konsistensi model bahasa.
+
+### Mencoba model secara lokal
+
+Jika Ollama belum memiliki model, unduh terlebih dahulu:
 
 ```powershell
 ollama pull llama3.2
+```
+
+Kemudian, di terminal PowerShell pada folder proyek:
+
+```powershell
 $env:SPRING_AI_OLLAMA_CHAT_OPTIONS_MODEL = "llama3.2"
 .\mvnw.cmd spring-boot:run
 ```
 
-Choose a genre and a preference in the browser, then record the actual returned titles and reasons along with the model name and version. Do not treat test-fixture responses as experimental results.
+Buka `http://localhost:8080`. Jika port 8080 sudah dipakai program lain, jalankan di port 18080:
 
-## Limitations
+```powershell
+.\mvnw.cmd '-Dspring-boot.run.arguments=--server.port=18080' spring-boot:run
+```
 
-- The catalog is deliberately small and curated (14 films across seven genres), so recommendations are limited to those entries.
-- No live model behavior, latency, or recommendation quality was measured in this environment.
-- H2 and the default local Ollama setup are for demonstration; authentication, production database migrations, and deployment hardening are out of scope.
+Lalu buka `http://localhost:18080`. Setelah mencoba, lengkapi catatan eksperimen dengan tanggal, genre, preferensi yang dikirim, nama/tag model, judul dan alasan yang benar-benar tampil, serta screenshot halaman hasil. Jangan gunakan respons stub dari tes sebagai hasil eksperimen model.
+
+## Batasan
+
+- Katalog berisi 14 film dalam tujuh genre; pilihan model terbatas pada katalog tersebut.
+- Belum ada pengukuran mutu rekomendasi, waktu respons, atau perbandingan antar-model.
+- H2 dan Ollama lokal digunakan untuk demo; autentikasi pengguna, migrasi skema produksi, dan pengamanan deployment tidak termasuk cakupan.

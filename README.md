@@ -1,50 +1,59 @@
 # AI Film Recommender
 
-A standalone Spring Boot demo that recommends up to three films from a small, curated catalog. It uses Spring AI with a locally running Ollama model; the model can select catalog entries and explain their fit, but cannot introduce films outside the supplied candidates. Requests and their ranked results are saved in H2.
+AI Film Recommender adalah aplikasi Spring Boot sederhana untuk mencari film dari katalog pilihan. Pengguna memilih genre dan menjelaskan film yang sedang dicari. Spring AI meneruskan permintaan beserta kandidat film yang sesuai ke Ollama lokal. Model hanya boleh memilih dari kandidat tersebut, lalu aplikasi memeriksa jawabannya sebelum menyimpan rekomendasi ke H2.
 
-## Requirements
+## Yang dibutuhkan
 
-- JDK 17 or newer
-- Ollama running locally with a chat model available
-- No separate Maven installation is needed; use the included Maven Wrapper
+- JDK 17 atau lebih baru
+- Ollama yang berjalan di komputer lokal
+- Model chat yang sudah tersedia di Ollama, misalnya `llama3.2`
+- Maven tidak perlu dipasang terpisah; proyek sudah menyertakan Maven Wrapper
 
-## Run locally
+## Menjalankan aplikasi
 
-1. Install and start Ollama, then download a model supported by your machine. For example:
+Pastikan Ollama berjalan dan model sudah diunduh. Jika belum:
 
-   ```powershell
-   ollama pull llama3.2
-   ```
+```powershell
+ollama pull llama3.2
+```
 
-2. Select the local model and start the application:
+Di terminal PowerShell pada folder proyek, pilih model lalu jalankan aplikasi:
 
-   ```powershell
-   $env:SPRING_AI_OLLAMA_CHAT_OPTIONS_MODEL = "llama3.2"
-   .\mvnw.cmd spring-boot:run
-   ```
+```powershell
+$env:SPRING_AI_OLLAMA_CHAT_OPTIONS_MODEL = "llama3.2"
+.\mvnw.cmd spring-boot:run
+```
 
-3. Open <http://localhost:8080>.
+Buka <http://localhost:8080> di browser. Jika port 8080 sedang dipakai aplikasi lain, jalankan di port 18080:
 
-The Ollama service uses its local default endpoint. No cloud API key is required. The application opens without calling the model, but recommendations require Ollama to be running with the selected model available.
+```powershell
+.\mvnw.cmd '-Dspring-boot.run.arguments=--server.port=18080' spring-boot:run
+```
 
-The curated catalog is seeded on startup. Runtime data is stored in `data/film-recommender.mv.db`; the `data/` directory is ignored by Git. The demo uses the local H2 `sa` account with a blank password and is not configured for production deployment.
+Lalu buka <http://localhost:18080>.
 
-## Test
+Aplikasi memakai endpoint lokal bawaan Ollama dan tidak memerlukan API key cloud. Halaman tetap bisa dibuka tanpa Ollama, tetapi permintaan rekomendasi membutuhkan layanan Ollama dan model yang dipilih sedang aktif.
 
-The deterministic suite uses an in-memory H2 database and a stub selection client; it never downloads a model or contacts Ollama.
+## Penyimpanan data
+
+Katalog film contoh diisi otomatis saat aplikasi mulai. Riwayat rekomendasi disimpan di `data/film-recommender.mv.db`; folder `data/` tidak ikut dilacak Git. Untuk demo ini, H2 memakai akun lokal `sa` tanpa password. Konfigurasi tersebut hanya ditujukan untuk penggunaan lokal, bukan produksi.
+
+## Menjalankan tes
+
+Tes otomatis memakai H2 dalam memori dan klien pemilih film tiruan. Tes tidak menghubungi Ollama dan tidak mengunduh model.
 
 ```powershell
 .\mvnw.cmd test
 ```
 
-## Design and experiment notes
+## Dokumentasi
 
-- [5W1H, setup, and experiment log](docs/experiment-report.md)
-- [UML diagrams and database model](docs/data-model.md)
-- [Approved implementation plan](docs/superpowers/plans/2026-11-27-ai-film-recommender.md)
+- [Latar belakang, cara kerja, dan catatan eksperimen](docs/experiment-report.md)
+- [Diagram UML dan model data](docs/data-model.md)
+- [Plan implementasi](docs/superpowers/plans/2026-11-27-ai-film-recommender.md)
 
-## Scope and limitations
+## Batasan aplikasi
 
-The demo has one browser form, a fixed catalog, and saved recommendation history. It does not include user accounts, catalog administration, an external movie API, or RAG. The language model response is validated for candidate membership, duplicates, result count, and reason length before anything is persisted.
+Katalog berisi sejumlah kecil film pilihan. Aplikasi belum memiliki akun pengguna, fitur pengelolaan katalog, API katalog eksternal, atau RAG. Model membantu memilih dan menjelaskan film; model tidak boleh menambahkan judul di luar kandidat yang diberikan. Sebelum menyimpan hasil, aplikasi menolak ID yang tidak dikenal, pilihan duplikat, lebih dari tiga hasil, dan alasan yang tidak valid.
 
-The project targets Java 17 and uses Spring Boot 4.1.0 and Spring AI 2.0.0. Compatibility was checked against the [Spring AI 2.0 GA announcement](https://spring.io/blog/2026/06/12/spring-ai-2-0-0-GA-available-now/), and the [Spring AI Ollama chat reference](https://docs.spring.io/spring-ai/reference/api/chat/ollama-chat.html).
+Proyek menargetkan Java 17 dan menggunakan Spring Boot 4.1.0 serta Spring AI 2.0.0. Kecocokan versi merujuk pada [pengumuman Spring AI 2.0 GA](https://spring.io/blog/2026/06/12/spring-ai-2-0-0-GA-available-now/) dan [panduan Spring AI untuk Ollama](https://docs.spring.io/spring-ai/reference/api/chat/ollama-chat.html).
