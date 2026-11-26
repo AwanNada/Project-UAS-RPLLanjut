@@ -35,7 +35,7 @@ The experiment demonstrates an AI-assisted selection flow while keeping the resu
 
 **Run date:** 2026-11-27
 
-**Environment:** Windows; Java 26.0.2 available; project compiler target Java 17; Spring Boot 4.1.0; Spring AI 2.0.0; H2 2.4.240. Maven Wrapper was used.
+**Environment:** Windows; tests ran on Java 26.0.2 with compiler target Java 17; a Java 17 runtime was not available for a separate runtime check. Spring Boot 4.1.0; Spring AI 2.0.0; H2 2.4.240. Maven Wrapper was used.
 
 | Check | Result |
 | --- | --- |
@@ -50,6 +50,19 @@ The experiment demonstrates an AI-assisted selection flow while keeping the resu
 ### Observed output
 
 The live smoke check confirmed an HTTP 200 home page with the title “AI Film Recommender”, a genre selector, a preference field limited to 300 characters, and the history area. The actual AI recommendation output remains unobserved; the test suite uses a deterministic stub and is not presented as model output.
+
+### Edge-case checks
+
+These were exercised by deterministic tests, not by live model calls or manual browser submissions:
+
+| Case | Verified behavior |
+| --- | --- |
+| Preference exceeds 300 characters | Validation error is shown; the selector is not called and no request is saved. |
+| Genre has no catalog candidates | Returns no results; the selector is not called and no request is saved. |
+| Unknown film ID | Rejected; no request is saved. |
+| Duplicate film IDs | Rejected; no request is saved. |
+| More than three selections | Rejected; no request is saved. |
+| File-backed database restart | Request and ranked item reload after closing and reopening the application context. |
 
 ### Reproducible checks
 
