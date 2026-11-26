@@ -33,7 +33,8 @@ The experiment demonstrates an AI-assisted selection flow while keeping the resu
 
 ## Experiment log
 
-**Run date:** 2026-11-27  
+**Run date:** 2026-11-27
+
 **Environment:** Windows; Java 26.0.2 available; project compiler target Java 17; Spring Boot 4.1.0; Spring AI 2.0.0; H2 2.4.240. Maven Wrapper was used.
 
 | Check | Result |
